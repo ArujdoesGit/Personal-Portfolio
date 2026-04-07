@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { projects } from './projects.js';
 
 // ─── Renderer ───────────────────────────────────────────────────────────────
@@ -114,96 +115,7 @@ function makeNebula() {
 scene.add(makeNebula());
 
 // ─── Head (placeholder) ──────────────────────────────────────────────────────
-function makeHeadTexture() {
-  const cvs = document.createElement('canvas');
-  cvs.width = cvs.height = 512;
-  const ctx = cvs.getContext('2d');
-
-  // Skin base
-  const bg = ctx.createRadialGradient(256, 210, 55, 256, 256, 275);
-  bg.addColorStop(0, '#f8c8a5');
-  bg.addColorStop(0.65, '#e9a87c');
-  bg.addColorStop(1, '#bf7545');
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, 512, 512);
-
-  // Hair
-  ctx.fillStyle = '#18100a';
-  ctx.beginPath();
-  ctx.ellipse(256, 88, 196, 118, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillRect(60, 88, 392, 125);
-
-  // Hair detail highlight
-  ctx.fillStyle = 'rgba(80,50,20,0.3)';
-  ctx.beginPath();
-  ctx.ellipse(200, 60, 70, 35, -0.3, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Eyebrows
-  ctx.strokeStyle = '#1a1005';
-  ctx.lineWidth = 11;
-  ctx.lineCap = 'round';
-  ctx.beginPath();
-  ctx.moveTo(126, 200); ctx.quadraticCurveTo(172, 186, 216, 198);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(296, 198); ctx.quadraticCurveTo(340, 186, 386, 200);
-  ctx.stroke();
-
-  // Eye whites
-  ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.ellipse(172, 250, 46, 37, -0.1, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(340, 250, 46, 37,  0.1, 0, Math.PI * 2); ctx.fill();
-
-  // Iris
-  ctx.fillStyle = '#4a78cc';
-  ctx.beginPath(); ctx.ellipse(172, 253, 29, 31, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(340, 253, 29, 31, 0, 0, Math.PI * 2); ctx.fill();
-
-  // Iris inner glow
-  ctx.fillStyle = '#6a9ae8';
-  ctx.beginPath(); ctx.ellipse(172, 250, 18, 20, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(340, 250, 18, 20, 0, 0, Math.PI * 2); ctx.fill();
-
-  // Pupil
-  ctx.fillStyle = '#080808';
-  ctx.beginPath(); ctx.ellipse(172, 253, 14, 17, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(340, 253, 14, 17, 0, 0, Math.PI * 2); ctx.fill();
-
-  // Eye shine
-  ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.ellipse(163, 242, 7, 7, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(331, 242, 7, 7, 0, 0, Math.PI * 2); ctx.fill();
-
-  // Nose
-  ctx.strokeStyle = '#b06840';
-  ctx.lineWidth = 5;
-  ctx.lineCap = 'round';
-  ctx.beginPath();
-  ctx.moveTo(242, 295); ctx.quadraticCurveTo(224, 328, 240, 344);
-  ctx.quadraticCurveTo(256, 354, 272, 344);
-  ctx.quadraticCurveTo(288, 328, 270, 295);
-  ctx.stroke();
-
-  // Smile
-  ctx.strokeStyle = '#8a3818';
-  ctx.lineWidth = 7;
-  ctx.lineCap = 'round';
-  ctx.beginPath();
-  ctx.arc(256, 348, 80, 0.22, Math.PI - 0.22);
-  ctx.stroke();
-
-  // Blush
-  ctx.fillStyle = 'rgba(240,90,70,0.2)';
-  ctx.beginPath(); ctx.ellipse(112, 310, 55, 30, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(400, 310, 55, 30, 0, 0, Math.PI * 2); ctx.fill();
-
-  const tex = new THREE.CanvasTexture(cvs);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
-}
-
+// ─── Glow aura (shared, added to head once loaded) ───────────────────────────
 const headGlowMesh = (() => {
   const geo = new THREE.SphereGeometry(22, 32, 32);
   const mat = new THREE.MeshBasicMaterial({
@@ -215,14 +127,40 @@ const headGlowMesh = (() => {
   return new THREE.Mesh(geo, mat);
 })();
 
-const headMesh = (() => {
-  const geo = new THREE.SphereGeometry(18, 64, 64);
-  const mat = new THREE.MeshStandardMaterial({ map: makeHeadTexture(), roughness: 0.8, metalness: 0.0 });
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.add(headGlowMesh);
-  scene.add(mesh);
-  return mesh;
-})();
+// headMesh is set once the GLTF loads; animation loop checks for null
+let headMesh = null;
+let headBaseY = 0;
+
+const loader = new GLTFLoader();
+loader.load('2026-04-06.glb', (gltf) => {
+  const model = gltf.scene;
+
+  // Add to scene first so Three.js manages matrixWorld correctly
+  scene.add(model);
+
+  // Wait one rAF so the render loop runs once and updates all matrices
+  requestAnimationFrame(() => {
+    const box = new THREE.Box3().setFromObject(model);
+    const size = box.getSize(new THREE.Vector3());
+    const centre = box.getCenter(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const scale = 36 / maxDim;
+
+    model.scale.setScalar(scale);
+
+    // rAF again so matrices reflect the new scale before we re-measure
+    requestAnimationFrame(() => {
+      const box2 = new THREE.Box3().setFromObject(model);
+      const centre2 = box2.getCenter(new THREE.Vector3());
+      model.position.sub(centre2);
+
+      model.add(headGlowMesh);
+      headBaseY = model.position.y;
+      headMesh = model;
+      console.log(`Head placed at y=${model.position.y.toFixed(2)}, world centre should be ~0`);
+    });
+  });
+});
 
 // ─── Floating dust around head ───────────────────────────────────────────────
 function makeDust() {
@@ -380,12 +318,12 @@ function animate() {
   requestAnimationFrame(animate);
   const t = clock.getElapsedTime();
 
-  // Head: slow spin + gentle bob
-  headMesh.rotation.y  = t * 0.09;
-  headMesh.position.y  = Math.sin(t * 0.7) * 0.6;
-
-  // Head glow pulse
-  headGlowMesh.material.opacity = 0.04 + Math.sin(t * 1.4) * 0.03;
+  // Head: slow spin + gentle bob (once loaded)
+  if (headMesh) {
+    headMesh.rotation.y = t * 0.09;
+    headMesh.position.y = headBaseY + Math.sin(t * 0.7) * 0.6;
+    headGlowMesh.material.opacity = 0.04 + Math.sin(t * 1.4) * 0.03;
+  }
 
   // Dust slow orbit
   dust.rotation.y = t * 0.06;
