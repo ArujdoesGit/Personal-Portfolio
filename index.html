@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portfolio — Galaxy</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <canvas id="canvas"></canvas>
+
+  <!-- Header -->
+  <div id="header">
+    <h1>Your Name</h1>
+    <p>Drag to explore &nbsp;·&nbsp; Click a planet to open a project</p>
+  </div>
+
+  <!-- Hover tooltip -->
+  <div id="tooltip"></div>
+
+  <!-- Project detail panel -->
+  <div id="panel" class="panel">
+    <button id="panel-close">✕</button>
+    <span id="panel-emoji"></span>
+    <h2 id="panel-title"></h2>
+    <p id="panel-desc"></p>
+    <div id="panel-tags"></div>
+    <a id="panel-link" href="#" target="_blank" rel="noopener">View Project →</a>
+  </div>
+
+  <!-- Hint -->
+  <div id="hint">scroll to zoom</div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three":          "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/":  "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module" src="main.js"></script>
+
+</body>
+</html>
