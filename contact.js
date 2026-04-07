@@ -33,6 +33,29 @@ modal.addEventListener('click', (e) => e.stopPropagation());
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
+function spawnSlashes() {
+  const rect = rocketWrap.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top  + rect.height / 2;
+
+  const configs = [
+    { dx: -60, dy: -18, angle: -20, cls: ''        },
+    { dx: -20, dy:  10, angle: -35, cls: 'slash-2' },
+    { dx:  30, dy: -30, angle: -15, cls: ''        },
+    { dx:  60, dy:   5, angle: -28, cls: 'slash-2' },
+  ];
+
+  configs.forEach(({ dx, dy, angle, cls }) => {
+    const el = document.createElement('div');
+    el.className = 'slash-mark ' + cls;
+    el.style.left = (cx + dx) + 'px';
+    el.style.top  = (cy + dy) + 'px';
+    el.style.setProperty('--angle', angle + 'deg');
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 600);
+  });
+}
+
 function flyPlaneToRocket() {
   // Create paper plane element at the send button
   const plane = document.createElement('div');
@@ -84,7 +107,7 @@ function showToast() {
 }
 
 function resetRocket() {
-  rocketWrap.classList.remove('launching', 'rumbling');
+  rocketWrap.classList.remove('launching', 'rumbling', 'winding-up');
   // Re-enable the idle float animation
   rocketWrap.style.animation = '';
   void rocketWrap.offsetWidth; // reflow to restart animation
@@ -105,27 +128,28 @@ form.addEventListener('submit', async (e) => {
   sendBtn.disabled = true;
   sendBtn.textContent = 'Sending…';
 
-  // 1 — Envelope flies from form to rocket
+  // 1 — Envelope flies from form to Renekton
   flyPlaneToRocket();
-  await sleep(750);
-
-  // 2 — Close the modal
-  modal.classList.remove('open');
-  await sleep(200);
-
-  // 3 — Rumble!
-  rocketWrap.classList.add('rumbling');
   await sleep(700);
 
-  // 4 — Send the email (fire & forget the await so animation isn't delayed)
+  // 2 — Close modal
+  modal.classList.remove('open');
+  await sleep(150);
+
+  // 3 — Wind-up (crouching before dash)
+  rocketWrap.classList.add('winding-up');
+  await sleep(380);
+
+  // 4 — Send email (fire & forget)
   emailjs
     .send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { from_name: name, from_email: email, message })
     .catch((err) => console.error('EmailJS error:', err));
 
-  // 5 — LAUNCH 🚀
-  rocketWrap.classList.remove('rumbling');
+  // 5 — Slash marks then DICE off screen
+  spawnSlashes();
+  rocketWrap.classList.remove('winding-up');
   rocketWrap.classList.add('launching');
-  await sleep(1200);
+  await sleep(950);
 
   // 6 — Reset everything
   form.reset();
