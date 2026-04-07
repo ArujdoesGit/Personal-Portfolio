@@ -32,6 +32,50 @@
   <!-- Hint -->
   <div id="hint">scroll to zoom</div>
 
+  <!-- ── Rocket contact button ───────────────────────── -->
+  <div id="rocket-wrap">
+    <svg id="rocket-svg" viewBox="0 0 54 96" xmlns="http://www.w3.org/2000/svg">
+      <!-- body -->
+      <path d="M27 4 C17 4 11 16 11 32 L11 66 L27 74 L43 66 L43 32 C43 16 37 4 27 4Z" fill="#e63946"/>
+      <!-- window -->
+      <circle cx="27" cy="40" r="9" fill="#a8dadc"/>
+      <circle cx="27" cy="40" r="6.5" fill="#457b9d"/>
+      <circle cx="24" cy="37" r="2.2" fill="rgba(255,255,255,0.45)"/>
+      <!-- fins -->
+      <path d="M11 56 L2 74 L11 69 Z" fill="#c1121f"/>
+      <path d="M43 56 L52 74 L43 69 Z" fill="#c1121f"/>
+      <!-- nose star -->
+      <circle cx="27" cy="19" r="3" fill="white" opacity="0.75"/>
+      <!-- flame (hidden until launch) -->
+      <g id="rocket-flame">
+        <ellipse cx="27" cy="78" rx="9"  ry="13" fill="#ffb703"/>
+        <ellipse cx="27" cy="78" rx="6"  ry="9"  fill="#fd8c00"/>
+        <ellipse cx="27" cy="78" rx="3.5" ry="5.5" fill="#fff"/>
+      </g>
+    </svg>
+    <span class="rocket-label">Say hi!</span>
+  </div>
+
+  <!-- ── Contact modal ───────────────────────────────── -->
+  <div id="contact-modal">
+    <button id="contact-close">✕</button>
+    <h2 class="contact-title">Send a Message 🚀</h2>
+    <form id="contact-form" novalidate>
+      <input  type="text"  name="from_name"  placeholder="Your name"    required />
+      <input  type="email" name="from_email" placeholder="Your email"   required />
+      <textarea             name="message"   placeholder="What's up?" rows="4" required></textarea>
+      <button type="submit" id="send-btn">Launch it <span class="btn-rocket">🚀</span></button>
+    </form>
+  </div>
+
+  <!-- ── Success toast ───────────────────────────────── -->
+  <div id="success-toast">Message delivered to the stars ✨</div>
+
+  <!-- EmailJS -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script>emailjs.init('YOUR_PUBLIC_KEY');</script>
+  <script src="contact.js"></script>
+
   <script type="importmap">
   {
     "imports": {
